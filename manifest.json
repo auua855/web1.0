@@ -1,0 +1,17 @@
+{
+  "name": "リアルタイムトレンドエクスプローラー",
+  "short_name": "TrendExp",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#8b5cf6",
+  "description": "スマホでリアルタイムのネットトレンドをAIで調べるアプリ",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
