@@ -6,6 +6,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const loader = document.getElementById('loader');
     const welcomeState = document.getElementById('welcome-state');
     const historyContainer = document.getElementById('history-container');
+    const currentDatetimeEl = document.getElementById('current-datetime');
+    
+    // Live Datetime Updates
+    const updateDatetime = () => {
+        if (!currentDatetimeEl) return;
+        const now = new Date();
+        const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        currentDatetimeEl.textContent = now.toLocaleString('ja-JP', options);
+    };
+    updateDatetime();
+    setInterval(updateDatetime, 1000);
     
     // Settings Elements
     const settingsBtn = document.getElementById('settings-btn');
@@ -121,46 +132,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'var(--score-low)';
     };
 
-    // Fetch Wikipedia Thumbnail
-    const fetchThumbnail = async (query) => {
-        try {
-            // Focus search on prominent Japanese subjects first
-            const url = `https://ja.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(query)}&prop=pageimages&format=json&pithumbsize=400&origin=*`;
-            const response = await fetch(url);
-            const data = await response.json();
-            const pages = data.query?.pages;
-            
-            if (pages) {
-                const pageId = Object.keys(pages)[0];
-                if (pageId !== "-1" && pages[pageId].thumbnail) {
-                    return pages[pageId].thumbnail.source;
-                }
-            }
-            return null;
-        } catch (error) {
-            console.error('Thumbnail fetch error:', error);
-            return null;
-        }
-    };
-
     // Render Result Card
     const renderCard = async (item, index) => {
         const card = document.createElement('div');
         card.className = 'trend-card';
         card.style.animationDelay = `${index * 0.1}s`;
-
-        // Image placeholder
-        const imageId = `img-${Math.random().toString(36).substr(2, 9)}`;
         
         card.innerHTML = `
-            <div class="card-image-wrap">
-                <div class="rank-badge">${index + 1}</div>
-                <div class="score-badge">
+            <div class="card-header-compact">
+                <div class="rank-badge-compact">${index + 1}</div>
+                <div class="score-badge-compact">
                     <span class="score-dot" style="background-color: ${getScoreColor(item.score)}"></span>
                     注目度: ${item.score}
-                </div>
-                <div id="wrap-${imageId}" class="no-image">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 </div>
             </div>
             <div class="card-content">
@@ -177,14 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-
-        // Async Thumbnail Fetch
-        fetchThumbnail(item.query || item.title).then(imgUrl => {
-            if (imgUrl) {
-                const imgWrap = card.querySelector(`#wrap-${imageId}`);
-                imgWrap.outerHTML = `<img src="${imgUrl}" alt="${item.title}" class="card-image" loading="lazy">`;
-            }
-        });
 
         // Add Listeners
         card.querySelector('.deep-dive-btn').addEventListener('click', () => handleDeepDive(item.query || item.title));
@@ -218,8 +193,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Construct API Call
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         
+        const nowStr = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        
         const prompt = `あなたはネットのリアルタイムトレンドに詳しい優秀なAIエージェントです。
-指定されたキーワード「${keyword}」に関連する、現在のネット上のトレンドや話題、関連語を10個推測して抽出してください。
+現在の日時は【 ${nowStr} 】です。必ずこの現在日時を基準にしてください。
+指定されたキーワード「${keyword}」に関連する、いま現在のネット上の最前線の話題や関連語を10個推測して抽出してください。
+※1ヶ月前の古いデータなどは絶対に除外し、現時点でのリアルタイムな情報のみを厳選して抽出すること。
+
 以下のJSONスキーマの配列形式のみで出力してください。Markdownのコードブロック構文（\`\`\`json）やその他の説明テキストは一切含めないでください。純粋なJSON配列のみを出力すること。
 
 [
